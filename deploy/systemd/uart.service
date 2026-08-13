@@ -1,0 +1,23 @@
+[Unit]
+Description=Smart Car UART Bridge (ESP32 Motor Control)
+After=orchestrator.service
+Requires=orchestrator.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=dev
+Group=dialout
+WorkingDirectory=/home/dev/smart_car
+Environment=PROJECT_ROOT=/home/dev/smart_car
+Environment=PYTHONPATH=/home/dev/smart_car
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=/home/dev/smart_car/.env
+ExecStart=/home/dev/smart_car/.venvs/stte/bin/python -m src.uart.motor_bridge
+Restart=on-failure
+RestartSec=3
+StandardOutput=append:/home/dev/smart_car/logs/uart.log
+StandardError=append:/home/dev/smart_car/logs/uart.log
+
+[Install]
+WantedBy=multi-user.target

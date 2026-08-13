@@ -1,0 +1,37 @@
+{
+  "stt": {
+    "backend": "vosk",
+    "model_path": "/home/pi/models/vosk-model-small-en-us-0.15",
+    "sample_rate": 16000,
+    "language": "en",
+    "enable_timestamps": true
+  },
+  "tts": {
+    "voice": "en-gb-sarah",
+    "model_path": "/home/pi/models/piper/en-gb-sarah.onnx",
+    "sample_rate": 22050,
+    "noise_scale": 0.55,
+    "length_scale": 0.95
+  },
+  "llm": {
+    "model_path": "/home/pi/models/llama/phi-3-mini.gguf",
+    "context_tokens": 1536,
+    "gpu_layers": 8,
+    "threads": 4
+  },
+  "vision": {
+    "model_path": "/home/pi/models/yolo/yolov5n.pt",
+    "input_size": [640, 640],
+    "confidence": 0.3,
+    "iou": 0.5
+  },
+  "display": {
+    "resolution": [480, 320],
+    "rotation": 0,
+    "spi_bus": 0,
+    "spi_device": 1
+  },
+  "logs": {
+    "directory": "./logs"
+  }
+}

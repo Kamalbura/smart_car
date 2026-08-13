@@ -1,0 +1,33 @@
+# Runtime image for the pure-software services: orchestrator, llm,
+# remote-interface, uart.
+#
+# One image serves all four because they share a dependency set (pyzmq, pyyaml,
+# openai, pyserial) and it keeps the Pi from building and storing four nearly
+# identical layers. The heavy, conflicting dependencies -- onnxruntime, opencv,
+# ctranslate2, the Azure Speech SDK -- belong to vision and voice, which stay
+# on the host for now, so none of that weight is here.
+FROM python:3.11-slim
+
+RUN useradd --create-home --uid 1000 app
+
+WORKDIR /app
+
+COPY requirements.txt requirements-llme.txt ./
+RUN pip install --no-cache-dir -r requirements.txt -r requirements-llme.txt
+
+COPY src/ ./src/
+
+RUN mkdir -p /app/logs && chown -R app:app /app
+
+# Nothing here needs root. The one service touching hardware (uart) reaches
+# /dev/serial0 through group membership granted in compose.yaml, not by
+# escalating this image.
+USER app
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PROJECT_ROOT=/app
+
+# config/ is bind-mounted read-only rather than copied, so a threshold change
+# does not require an image rebuild.
+CMD ["python", "-m", "src.core.orchestrator"]

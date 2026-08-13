@@ -1,0 +1,149 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+.gradle/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Virtual environments
+.venv/
+venv/
+venvs/
+.venvs/
+
+# Environment files (keep .env.example)
+.env
+.env.*
+!.env.example
+
+# Logs and runtime files
+logs/
+*.log
+run/
+*.pid
+
+# Test, caches and coverage
+.pytest_cache/
+.mypy_cache/
+.cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Editors and IDEs
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Android local files
+mobile_app/local.properties
+mobile_app/window_dump*.xml
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints
+
+# Model/artifact caches and large model files.
+# Weights are never committed, but each model directory keeps a tracked
+# README.md explaining what belongs there and how to fetch it. `!models/**/`
+# is required so git descends into the directories at all.
+models/**
+!models/**/
+!models/**/README.md
+*.pt
+*.pth
+*.safetensors
+*.gguf
+*.bin
+*.onnx
+*.gz
+*.tar
+*.zip
+huggingface/
+hf_models/
+.cache/huggingface
+
+# Firmware build outputs. sdkconfig is generated from sdkconfig.defaults, so
+# only the defaults are tracked -- otherwise every `idf.py set-target` shows up
+# as a 2000-line diff.
+firmware/build*/
+firmware/port/*/build/
+firmware/port/*/sdkconfig
+firmware/port/*/sdkconfig.old
+*.elf
+*.map
+
+# Third-party build folders used by scripts/tools
+third_party/
+thirdpartyu/
+third_party/LCD-show
+third_party/llama.cpp
+
+# Misc
+*.pyc
+*.pyo
+*.pyd
+.conda
+
+# Holding area. Things moved out of the tree but not yet thrown away --
+# superseded modules, docs describing hardware that was never built, captured
+# logs, test media. Never published; delete when you are sure.
+dump/
+
+# ---------------------------------------------------------------------------
+# Captured runtime output. `logs/` only matches a directory of that exact
+# name, and `*.log` misses .jsonl and .txt, so these all slipped through.
+# ---------------------------------------------------------------------------
+android-logs/
+backend-logs/
+reports/
+*.jsonl
+led_ring_status.txt
+
+# Recorded audio and test media
+*.wav
+*.wav.json
+*.wav.txt
+img*.jpg
+face_preview.png
+
+# LaTeX build artifacts (the thesis PDF is a build output, not a source)
+book/*.pdf
+*.aux
+*.fls
+*.fdb_latexmk
+*.toc
+*.lof
+*.lot
+*.out
+*.synctex.gz
+*.bbl
+*.blg
+
+# Editor and shell accidents. `=1.0.0` and `=3.24.0` are what an unquoted
+# `pip install foo >=1.0.0` leaves behind on the filesystem.
+*.bak
+*.orig
+=*
+udo *
+
+# Android UI dumps at repo root (the mobile_app/ rule above misses these)
+ui.xml
+window_dump*.xml
+
+# Picovoice keyword files are licensed per-account and must not be
+# redistributed. Generate your own at https://console.picovoice.ai
+*.ppn

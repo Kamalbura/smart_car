@@ -1,0 +1,13 @@
+# STT environment requirements (kept minimal; install others as needed)
+# Optional: sounddevice|pyaudio for direct mic capture (whisper.cpp stream binary handles mic itself)
+# If you plan to capture mic in Python wrapper, uncomment one:
+# sounddevice>=0.4.6
+# pyaudio>=0.2.13
+webrtcvad>=2.0.10
+numpy>=1.26.0
+pyzmq>=25.1
+pyyaml>=6.0
+pvporcupine==4.0.0
+faster-whisper>=1.0.0
+ctranslate2>=3.24.0
+azure-cognitiveservices-speech>=1.37.0

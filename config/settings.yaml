@@ -1,0 +1,33 @@
+stt:
+  backend: whisper_cpp
+  model_path: ./models/stt/ggml-base.en.bin
+  sample_rate: 16000
+  language: en
+  enable_timestamps: true
+tts:
+  voice: en_US-amy-medium
+  model_path: ./models/tts/en_US-amy-medium.onnx
+  sample_rate: 22050
+  noise_scale: 0.6
+  length_scale: 1.0
+llm:
+  model_path: ./models/llm/llama-2-7b.gguf
+  context_tokens: 2048
+  gpu_layers: 4
+  threads: 4
+vision:
+  model_path: ./models/vision/yolov8n.pt
+  input_size: [640, 640]
+  confidence: 0.25
+  iou: 0.45
+display:
+  resolution: [480, 320]
+  rotation: 90
+  spi_bus: 0
+  spi_device: 0
+logging:
+  level: INFO
+  file: ./logs/system.log
+  rotation:
+    max_bytes: 1048576
+    backups: 5

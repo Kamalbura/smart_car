@@ -1,0 +1,35 @@
+[Unit]
+Description=Voice Service (Wakeword + STT) - Tested and Working
+After=network.target sound.target
+# Conflicts with old separate services
+Conflicts=wakeword.service stt.service stt-wrapper.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/dev/smart_car
+Environment=PV_ACCESS_KEY=${PV_ACCESS_KEY}
+Environment=PYTHONPATH=/home/dev/smart_car
+Environment=PYTHONUNBUFFERED=1
+Environment=PROJECT_ROOT=/home/dev/smart_car
+EnvironmentFile=/home/dev/smart_car/.env
+
+# Kill any process holding the mic before starting (ignore failures)
+ExecStartPre=-/usr/bin/fuser -k /dev/snd/pcmC3D0c
+
+# Use the tested voice_service.py with scipy resampling
+ExecStart=/home/dev/smart_car/.venvs/stte/bin/python -m src.audio.voice_service --config config/system.yaml
+
+Restart=always
+RestartSec=3
+TimeoutStartSec=60
+User=dev
+Group=dev
+StandardOutput=append:/home/dev/smart_car/logs/voice_service.log
+StandardError=append:/home/dev/smart_car/logs/voice_service.error.log
+
+# Resource limits for Raspberry Pi
+MemoryMax=512M
+CPUQuota=80%
+
+[Install]
+WantedBy=multi-user.target

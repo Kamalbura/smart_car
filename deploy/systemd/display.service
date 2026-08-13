@@ -1,0 +1,25 @@
+[Unit]
+Description=Smart Car Display (Kawaii Face on TFT fb0)
+After=multi-user.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=dev
+Group=dev
+WorkingDirectory=/home/dev/smart_car
+Environment=PROJECT_ROOT=/home/dev/smart_car
+Environment=PYTHONPATH=/home/dev/smart_car
+Environment=SDL_FBDEV=/dev/fb0
+Environment=XDG_RUNTIME_DIR=/tmp/xdg_runtime_1000
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=/home/dev/smart_car/.env
+ExecStart=/home/dev/smart_car/.venvs/visn-py313/bin/python -m src.ui.face_fb --state=BASE --rotate=180 --swap-rb --eye-scale=0.75 --mouth-scale=0.75 --blush-scale=0.4 --fbdev=/dev/fb0
+Restart=on-failure
+RestartSec=2
+StandardOutput=append:/home/dev/smart_car/logs/display.log
+StandardError=append:/home/dev/smart_car/logs/display.log
+
+[Install]
+WantedBy=multi-user.target
+

@@ -1,0 +1,27 @@
+# 1 kHz tick so the 10 ms control loop is actually 10 ms rather than rounded
+# up to the 100 Hz default period.
+CONFIG_FREERTOS_HZ=1000
+
+# Task watchdog on, panic (and therefore reset) if the control loop stops
+# completing cycles. app_main subscribes itself and reconfigures the timeout
+# from BOARD_WDT_TIMEOUT_MS.
+CONFIG_ESP_TASK_WDT_INIT=y
+CONFIG_ESP_TASK_WDT_TIMEOUT_S=1
+CONFIG_ESP_TASK_WDT_PANIC=y
+
+# The idle tasks are not part of the safety loop and starving them briefly is
+# not a fault worth resetting over.
+CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0=n
+CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1=n
+
+# Console stays on UART0. The link to the Pi is UART2, so log output can never
+# corrupt the protocol stream -- unlike the previous firmware, which shared one
+# command buffer between the USB console and the Pi.
+CONFIG_ESP_CONSOLE_UART_DEFAULT=y
+
+CONFIG_COMPILER_OPTIMIZATION_PERF=y
+
+# Brownout detection matters on a robot: motor stall current sags the rail, and
+# a clean reset that announces itself via EVT_BOOT beats undefined behaviour.
+CONFIG_ESP_BROWNOUT_DET=y
+CONFIG_ESP_BROWNOUT_DET_LVL_SEL_7=y

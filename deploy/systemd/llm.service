@@ -1,0 +1,24 @@
+[Unit]
+Description=Smart Car LLM (Azure OpenAI)
+After=orchestrator.service
+Requires=orchestrator.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=dev
+Group=dev
+WorkingDirectory=/home/dev/smart_car
+Environment=PROJECT_ROOT=/home/dev/smart_car
+Environment=PYTHONPATH=/home/dev/smart_car
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=/home/dev/smart_car/.env
+# Use Azure OpenAI (Responses/Chat) via OpenAI SDK
+ExecStart=/home/dev/smart_car/.venvs/llme/bin/python -m src.llm.azure_openai_runner
+Restart=on-failure
+RestartSec=3
+StandardOutput=append:/home/dev/smart_car/logs/llm.log
+StandardError=append:/home/dev/smart_car/logs/llm.log
+
+[Install]
+WantedBy=multi-user.target

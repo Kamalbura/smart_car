@@ -1,0 +1,22 @@
+[Unit]
+Description=Smart Car Remote Interface (HTTP supervision)
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=dev
+Group=dev
+WorkingDirectory=/home/dev/smart_car
+Environment=PROJECT_ROOT=/home/dev/smart_car
+Environment=PYTHONPATH=/home/dev/smart_car
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=/home/dev/smart_car/.env
+ExecStart=/home/dev/smart_car/.venvs/stte/bin/python -m src.remote.remote_interface
+Restart=on-failure
+RestartSec=3
+StandardOutput=append:/home/dev/smart_car/logs/remote-interface.log
+StandardError=append:/home/dev/smart_car/logs/remote-interface.log
+
+[Install]
+WantedBy=multi-user.target

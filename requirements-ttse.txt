@@ -1,0 +1,10 @@
+# TTS environment requirements
+# Piper runner will be installed separately if using binaries; this keeps Python deps light
+pyyaml>=6.0
+pyzmq>=25.1
+numpy>=1.26.0
+# Azure cloud TTS runner dependency
+azure-cognitiveservices-speech>=1.37.0
+# For ALSA playback via simpleaudio or pyaudio, uncomment one of:
+# simpleaudio>=1.0.4
+# pyaudio>=0.2.13

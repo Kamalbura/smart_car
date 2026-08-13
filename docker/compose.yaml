@@ -1,0 +1,162 @@
+# Container topology.
+#
+#   Tests, on any machine:
+#       docker compose -f docker/compose.yaml run --rm dev
+#
+#   Core services:
+#       docker compose -f docker/compose.yaml --profile core up -d
+#
+#   Add the hardware-bound service (Pi only):
+#       docker compose -f docker/compose.yaml --profile core --profile hardware up -d
+#
+# IPC uses a normal bridge network rather than host networking. src/core/ipc.py
+# resolves its endpoints from IPC_UPSTREAM / IPC_DOWNSTREAM, so the orchestrator
+# binds on 0.0.0.0 and workers dial it by service name. Two consequences worth
+# knowing:
+#
+#   * It works on Windows and macOS, where `network_mode: host` does not. You
+#     can bring the core stack up on a laptop to exercise message flow without
+#     any of the robot's hardware.
+#   * Services are actually isolated. With host networking every container
+#     shares the Pi's loopback, so any of them could bind any port and the
+#     "only orchestrator binds 6010" rule would be convention, not enforcement.
+#
+# The added NAT hop is irrelevant at these message rates.
+
+name: smart-car
+
+services:
+
+  # ---------------------------------------------------------------------
+  # Tests. No hardware, no credentials, runs anywhere.
+  # ---------------------------------------------------------------------
+  dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+    volumes:
+      - ..:/workspace
+    working_dir: /workspace
+
+  # ---------------------------------------------------------------------
+  # The message bus owner. Binds both channels; everything else dials in.
+  # ---------------------------------------------------------------------
+  orchestrator:
+    profiles: [core]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.service
+    # Every service, including this one, uses the identical address. Inside
+    # this container the name `orchestrator` resolves to its own IP, so the
+    # bind succeeds; elsewhere it resolves to this container. A 0.0.0.0 bind
+    # would look tidier and be wrong -- WorldContextAggregator also *connects*
+    # to IPC_UPSTREAM, and connecting to 0.0.0.0 is undefined in ZeroMQ.
+    environment:
+      IPC_UPSTREAM: tcp://orchestrator:6010
+      IPC_DOWNSTREAM: tcp://orchestrator:6011
+    env_file:
+      - path: ../.env
+        required: false
+    volumes:
+      - ../config:/app/config:ro
+      - ../logs:/app/logs
+    command: python -m src.core.orchestrator
+    restart: unless-stopped
+    mem_limit: 256m
+
+  llm:
+    profiles: [core]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.service
+    environment:
+      IPC_UPSTREAM: tcp://orchestrator:6010
+      IPC_DOWNSTREAM: tcp://orchestrator:6011
+    env_file:
+      - path: ../.env
+        required: false
+    volumes:
+      - ../config:/app/config:ro
+      - ../logs:/app/logs
+    command: python -m src.llm.azure_openai_runner
+    depends_on: [orchestrator]
+    restart: unless-stopped
+    mem_limit: 256m
+
+  remote-interface:
+    profiles: [core]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.service
+    environment:
+      IPC_UPSTREAM: tcp://orchestrator:6010
+      IPC_DOWNSTREAM: tcp://orchestrator:6011
+    env_file:
+      - path: ../.env
+        required: false
+    volumes:
+      - ../config:/app/config:ro
+      - ../logs:/app/logs
+    ports:
+      - "8770:8770"
+    command: python -m src.remote.remote_interface
+    depends_on: [orchestrator]
+    restart: unless-stopped
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8770/health',timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ---------------------------------------------------------------------
+  # Hardware-bound. Pi only -- /dev/serial0 does not exist elsewhere.
+  # ---------------------------------------------------------------------
+  uart:
+    profiles: [hardware]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.service
+    environment:
+      IPC_UPSTREAM: tcp://orchestrator:6010
+      IPC_DOWNSTREAM: tcp://orchestrator:6011
+    env_file:
+      - path: ../.env
+        required: false
+    devices:
+      - /dev/serial0:/dev/serial0
+    # dialout is GID 20 on Raspberry Pi OS. Given numerically because the group
+    # does not exist inside the image. Check with `getent group dialout`.
+    group_add: ["20"]
+    volumes:
+      - ../config:/app/config:ro
+      - ../logs:/app/logs
+    command: python -m src.uart.motor_bridge
+    depends_on: [orchestrator]
+    restart: unless-stopped
+    mem_limit: 128m
+
+# ---------------------------------------------------------------------------
+# Deliberately NOT containerised:
+#
+#   vision     Picamera2 needs libcamera inside the container to match the
+#              host's version exactly, plus /run/udev and a pile of device
+#              nodes. Classic Docker-on-Pi tar pit, small payoff. Leave it
+#              under systemd, or move it to the OpenCV/V4L2 backend first.
+#
+#   voice      Wants /dev/snd plus the dsnoop `smartcar_capture` device defined
+#              in the host's /etc/asound.conf, and it already fights for the
+#              microphone -- its unit runs `fuser -k` on the ALSA node at
+#              startup. Containerising adds a second arbitration problem on top
+#              of one that is not solved yet.
+#
+#   led-ring   Needs GPIO and runs as root for NeoPixel timing. Possible with
+#              --privileged, but privileged + root is most of the isolation
+#              gone, so the container buys little.
+#
+# Mixing is fine: a containerised orchestrator and a systemd-managed vision
+# service both reach the bus, provided the systemd ones get IPC_UPSTREAM /
+# IPC_DOWNSTREAM pointed at the published bridge address.
+# ---------------------------------------------------------------------------

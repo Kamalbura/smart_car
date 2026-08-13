@@ -1,0 +1,6 @@
+# LLM environment requirements (llama.cpp built separately)
+pyyaml>=6.0
+pyzmq>=25.1
+numpy>=1.26.0
+huggingface-hub>=0.24.0
+openai>=1.0.0

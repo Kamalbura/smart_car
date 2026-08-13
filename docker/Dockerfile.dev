@@ -1,0 +1,41 @@
+# Development and CI image.
+#
+# Solves two concrete problems:
+#
+#   1. The six virtual environments. .venvs/{stte,ttse,llme,visn,core,dise}
+#      exist because heavy native dependencies conflict, setup_envs.sh does not
+#      actually create them correctly, and a seventh (.venvs/visn-py313) is
+#      referenced by systemd units but by no script. An image per concern is a
+#      better answer to that problem than a venv per concern.
+#
+#   2. No C compiler on Windows. The firmware host tests need one, and this
+#      image carries gcc + cmake + ninja, so `firmware/test` is runnable on any
+#      machine that has Docker.
+#
+# This image never runs on the robot. It has no hardware access and no cloud
+# credentials -- it exists to run tests.
+FROM python:3.11-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        cmake \
+        ninja-build \
+        git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+
+# Copied separately so dependency layers survive source edits.
+COPY requirements.txt requirements-llme.txt ./
+RUN pip install --no-cache-dir \
+        -r requirements.txt \
+        -r requirements-llme.txt
+
+# numpy is needed by test_pi_inference.py, which stubs cv2 rather than pulling
+# in all of OpenCV.
+RUN pip install --no-cache-dir numpy
+
+COPY docker/run-tests.sh /usr/local/bin/run-tests
+RUN chmod +x /usr/local/bin/run-tests
+
+CMD ["run-tests"]

@@ -1,0 +1,33 @@
+# Shell scripts and firmware sources must keep LF endings regardless of the
+# checkout platform. A Windows clone with core.autocrlf=true would otherwise
+# rewrite them to CRLF, and a CRLF shebang fails inside a Linux container with
+# the famously unhelpful "no such file or directory" -- naming the interpreter,
+# which exists.
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Same reasoning for anything executed by a Linux toolchain.
+Dockerfile* text eol=lf
+*.service text eol=lf
+*.cmake text eol=lf
+CMakeLists.txt text eol=lf
+
+# Firmware sources are compiled by GCC on both hosts; keep them stable so a
+# clone does not show every line as modified.
+*.c text eol=lf
+*.h text eol=lf
+*.ino text eol=lf
+
+*.py text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
+# Binary assets must never be transformed.
+*.png binary
+*.jpg binary
+*.pdf binary
+*.wav binary
+*.onnx binary
+*.ppn binary
+*.bin binary
+*.gguf binary

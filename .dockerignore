@@ -1,0 +1,35 @@
+# Keep the build context small. The repo carries ~3.8 MB of material that no
+# image needs, and on a Pi every megabyte of context is time.
+.git
+.venvs
+venvs
+
+book/
+documentation/
+docs/
+mobile_app/
+android-logs/
+backend-logs/
+reports/
+logs/
+run/
+
+models/
+third_party/
+firmware/build*/
+firmware/port/*/build/
+
+*.pdf
+*.wav
+*.jpg
+*.png
+*.jsonl
+*.log
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Never let a real credential into an image layer.
+.env
+.env.*
+!.env.example

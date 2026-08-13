@@ -1,0 +1,197 @@
+ipc:
+  upstream: ${IPC_UPSTREAM:-tcp://127.0.0.1:6010}   # module → orchestrator
+  downstream: ${IPC_DOWNSTREAM:-tcp://127.0.0.1:6011} # orchestrator → modules
+
+orchestrator:
+  # Auto-trigger: when enabled, starts listening after idle period
+  # Disabled because it triggers on background noise when no one is speaking
+  auto_trigger_enabled: false
+  auto_trigger_interval: 60.0
+
+audio:
+  # ═══════════════════════════════════════════════════════════════════════════
+  # UNIFIED AUDIO PIPELINE CONFIGURATION
+  # ═══════════════════════════════════════════════════════════════════════════
+  # When true, use the unified voice pipeline (src/audio/unified_voice_pipeline.py)
+  # which handles wakeword AND STT in a single process with shared mic access.
+  # This eliminates microphone resource conflicts on Raspberry Pi.
+  use_unified_pipeline: true
+  
+  # Legacy mode: when true, services (wakeword, STT wrapper) will prefer routing
+  # microphone access via the AudioManager service instead of opening
+  # ALSA/PortAudio directly. Only used if use_unified_pipeline is false.
+  use_audio_manager: false
+  
+  # Central AudioManager control endpoint (ZeroMQ REQ/REP for JSON RPC).
+  control_endpoint: tcp://127.0.0.1:6020
+  # Optional ALSA device node used by systemd ExecStartPre fuser.
+  mic_device_node: /dev/snd/pcmC3D0c
+  # Preferred input device name substring (used by future AudioManager
+  # hardware binding).
+  preferred_device_substring: USB Audio
+  # Default hardware sample rate when opening the device. AudioManager
+  # will resample for wakeword/STT clients as needed.
+  hw_sample_rate: 48000
+  # Approximate buffer sizing guidance (milliseconds).
+  hw_buffer_ms: 20
+  wakeword_frame_ms: 30
+  stt_chunk_ms: 500
+  # Use shared ALSA dsnoop - enables simultaneous mic access
+  mic_device: smartcar_capture
+  speaker_device: default
+
+wakeword:
+  engine: porcupine        # forced porcupine engine
+  # Direct access key from environment variable PV_ACCESS_KEY
+  access_key: ${ENV:PV_ACCESS_KEY}
+  access_key_path: ${HOME}/.config/pi-assistant/pv_access_key
+  sensitivity: 0.75
+  sim_mode: false
+  payload_keyword: "hey robo"
+  payload_variant: "robo"
+  keywords:
+    - hey robo
+  model: ${PROJECT_ROOT}/models/wakeword/hey_robo.ppn
+  model_paths:
+    porcupine_keyword: ${PROJECT_ROOT}/models/wakeword/hey_robo.ppn
+    tflite_model: ${PROJECT_ROOT}/models/wakeword/hey_robo.tflite
+  stte_venv: ${PROJECT_ROOT}/.venvs/stte
+  fallback_engine: pytorch
+  # Use shared ALSA dsnoop device configured via /etc/asound.conf
+  # MUST match a device name from PyAudio enumeration
+  mic_device: smartcar_capture
+
+stt:
+  engine: azure_speech
+  mic_hw: smartcar_capture
+  sample_rate: 16000
+  language: en
+  silence_threshold: 0.25
+  silence_duration_ms: 800
+  max_capture_seconds: 15
+  min_confidence: 0.3  # Added: gate low-confidence transcripts
+  runner_venv: ${PROJECT_ROOT}/.venvs/stte/bin/python
+  mic_device: smartcar_capture
+  # Safety timeout in seconds for a single listen session; if exceeded,
+  # orchestrator cancels listening and resumes vision.
+  timeout_seconds: 90.0  # Increased for Raspberry Pi slow whisper transcription
+  engines:
+    faster_whisper:
+      model: tiny.en
+      compute_type: int8       # good default for Raspberry Pi CPU
+      device: cpu              # cpu|cuda|auto
+      beam_size: 1             # speed over accuracy by default
+      download_root: ${PROJECT_ROOT}/third_party/whisper-fast
+    whispercpp:
+      model_path: ${PROJECT_ROOT}/models/whisper/ggml-small.en-q5_1.bin
+      bin_path: ${PROJECT_ROOT}/third_party/whisper.cpp/build/bin/whisper-cli
+    azure_speech:
+      # Azure Speech-to-Text (cloud)
+      # NOTE: YAML must not contain duplicate keys; keep a single azure_speech block.
+      key: ${ENV:AZURE_SPEECH_KEY}
+      region: ${ENV:AZURE_SPEECH_REGION}
+      # Optional full endpoint URL (can be used instead of region)
+      endpoint: ${ENV:AZURE_SPEECH_ENDPOINT}
+      language: en-US
+      mic_device: default
+
+tts:
+  # Orchestrator watchdog for the SPEAKING phase. `done` is only published
+  # after playback finishes, so this must exceed the longest utterance we ever
+  # synthesise or a long reply will be cut short.
+  timeout_seconds: 60.0
+  voice: en-us-amy-medium
+  model_path: ${PROJECT_ROOT}/models/piper/en_US-amy-medium.onnx
+  sample_rate: 22050
+  noise_scale: 0.6
+  length_scale: 1.0
+  bin_path: ${PROJECT_ROOT}/.venvs/ttse/bin/piper
+  playback: aplay
+  playback_device: plughw:3,0
+  # Optional Azure Text-to-Speech (cloud). To use it, run src/tts/azure_tts_runner.py
+  # as the TTS service instead of piper_runner.
+  azure:
+    voice: en-US-JennyNeural
+    region: ${ENV:AZURE_SPEECH_REGION}
+    key: ${ENV:AZURE_SPEECH_KEY}
+    output: speakers   # speakers|wav
+    wav_path: run/tts_out.wav
+
+llm:
+  engine: azure_openai
+  # Orchestrator watchdog: if no llm.response arrives within this window the
+  # THINKING phase is abandoned, motors are stopped and the FSM returns to
+  # IDLE. Must be longer than the slowest engine above (local llama.cpp on a
+  # Pi 4 can take 30s+).
+  timeout_seconds: 45.0
+  # Cloud Gemini model configuration
+  gemini_model: gemini-2.5-flash
+  # API key is read from environment by default
+  gemini_api_key: ${ENV:GEMINI_API_KEY}
+  # Optional tuning knobs
+  temperature: 0.2
+  top_p: 0.9
+  
+  # ═══════════════════════════════════════════════════════════════════════════
+  # CONVERSATION MEMORY CONFIGURATION
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Cloud LLMs (Gemini) are stateless - these settings control local memory.
+  # Inspired by OVOS ConverseService and Wyoming session management.
+  
+  # Maximum conversation turns to keep in memory (user + assistant pairs)
+  # Higher = more context but larger prompts and higher latency
+  memory_max_turns: 10
+  
+  # Conversation timeout in seconds. After this duration of inactivity,
+  # the conversation resets (like OVOS skill deactivation)
+  conversation_timeout_s: 120
+  
+  # Robot assistant name (used in system prompt)
+  assistant_name: ROBO
+
+vision:
+  model_path_onnx: ${PROJECT_ROOT}/models/vision/yolo11n.onnx
+  model_path_ncnn_param: ${PROJECT_ROOT}/models/vision/yolo11n.param
+  model_path_ncnn_bin: ${PROJECT_ROOT}/models/vision/yolo11n.bin
+  input_size: [640, 640]
+  confidence: 0.25
+  iou: 0.45
+  camera_index: 0
+  backend: onnx # options: ncnn|onnx
+  label_path: ${PROJECT_ROOT}/models/vision/coco_labels.txt
+  # Target FPS for inference (lower = less CPU, higher = more responsive)
+  target_fps: 15
+  # Vision lifecycle control
+  default_mode: off
+
+remote_interface:
+  bind_host: 0.0.0.0
+  port: 8770
+  allowed_cidrs:
+    - 127.0.0.1/32
+    - 100.64.0.0/10
+  session_timeout_s: 15.0
+
+nav:
+  uart_device: /dev/serial0
+  baud_rate: 115200
+  timeout: 1.0
+  # Commands MUST match ESP32 esp-code.ino handleCommand() tokens
+  commands:
+    forward: "FORWARD"
+    backward: "BACKWARD"
+    left: "LEFT"
+    right: "RIGHT"
+    stop: "STOP"
+    scan: "SCAN"
+    reset: "RESET"
+    clearblock: "CLEARBLOCK"
+
+display:
+  resolution: [480, 320]
+  rotation: 90
+  spi_bus: 0
+  spi_device: 0
+
+logs:
+  directory: ./logs

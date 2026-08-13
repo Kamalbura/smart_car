@@ -1,0 +1,13 @@
+numpy>=1.23
+opencv-python-headless>=4.7
+# Use tflite-runtime wheel for Raspberry Pi (install matching wheel manually)
+# Example (install wheel matching your Python+arch): tflite-runtime==2.10.0
+onnxruntime>=1.15
+# Optional: pycoral (only if using Coral EdgeTPU)
+# pycoral
+# Vision environment requirements
+pyyaml>=6.0
+pyzmq>=25.1
+numpy>=1.26.0
+# OpenCV note: on Raspberry Pi, prefer `opencv-python` wheels if available; else install via apt.
+opencv-python>=4.8.0
