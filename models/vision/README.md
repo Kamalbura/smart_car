@@ -62,7 +62,7 @@ yolo export model=yolo11n.pt format=onnx imgsz=640 opset=12
 mv yolo11n.onnx models/vision/
 ```
 
-Note that `ultralytics` and `torch` are **not** in any `requirements-*.txt` on
+Note that `ultralytics` and `torch` are **not** in any `requirements/*.txt` on
 purpose — nothing at runtime imports them. `src/vision/detector.py` uses
 `onnxruntime` (MIT) only. Install them in a throwaway environment for the export
 and keep them out of `.venvs/visn`.

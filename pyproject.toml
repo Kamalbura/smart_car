@@ -13,7 +13,7 @@ license = { file = "LICENSE" }
 # Runtime dependencies are intentionally NOT declared here. Services run in
 # separate environments (or containers) with conflicting native dependencies --
 # onnxruntime, ctranslate2 and the Azure Speech SDK do not belong in one
-# resolver. See requirements-*.txt, one per service role.
+# resolver. See requirements/*.txt, one per service role.
 dependencies = []
 
 [tool.setuptools]

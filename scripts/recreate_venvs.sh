@@ -40,12 +40,12 @@ main() {
   require_py
   mkdir -p "$VENV_DIR"
   # Core/shared requirements
-  req_core="$ROOT/requirements.txt"
-  req_stte="${REQ_STTE:-$ROOT/requirements-stte.txt}"
-  req_ttse="${REQ_TTSE:-$ROOT/requirements-ttse.txt}"
-  req_llme="${REQ_LLME:-$ROOT/requirements-llme.txt}"
-  req_visn="${REQ_VISN:-$ROOT/requirements-visn.txt}"
-  req_dise="${REQ_DISE:-$ROOT/requirements-dise.txt}"
+  req_core="$ROOT/requirements/base.txt"
+  req_stte="${REQ_STTE:-$ROOT/requirements/stte.txt}"
+  req_ttse="${REQ_TTSE:-$ROOT/requirements/ttse.txt}"
+  req_llme="${REQ_LLME:-$ROOT/requirements/llme.txt}"
+  req_visn="${REQ_VISN:-$ROOT/requirements/visn.txt}"
+  req_dise="${REQ_DISE:-$ROOT/requirements/dise.txt}"
 
   create_env core "$req_core"
   # Optional specialized envs (use env-specific requirements if present, else core)

@@ -12,8 +12,8 @@ RUN useradd --create-home --uid 1000 app
 
 WORKDIR /app
 
-COPY requirements.txt requirements-llme.txt ./
-RUN pip install --no-cache-dir -r requirements.txt -r requirements-llme.txt
+COPY requirements/base.txt requirements/llme.txt ./requirements/
+RUN pip install --no-cache-dir -r requirements/base.txt -r requirements/llme.txt
 
 COPY src/ ./src/
 

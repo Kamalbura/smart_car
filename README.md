@@ -7,8 +7,39 @@ can overrule it.
 
 The interesting engineering is not the voice assistant. It is the boundary
 between a probabilistic language model and a machine with motors: what happens
-when the model is wrong, when the network stalls, when a sensor is unplugged,
-or when the Pi stops responding entirely.
+when the model is wrong, when the network stalls, when a sensor is unplugged, or
+when the computer running all of it stops responding.
+
+---
+
+## Status
+
+**The system works end to end.** Wakeword, speech recognition, language model,
+speech synthesis, vision, motion and the Android remote all function together on
+the physical robot, and have for some time.
+
+This release is a **hardening layer on top of that working base**. It does not
+change what the robot does; it changes how it behaves when something goes wrong.
+
+| | |
+|---|---|
+| Base system | working on hardware |
+| This release — code | complete |
+| This release — automated tests | 155 Python, 193 C checks, all passing |
+| This release — hardware validation | **in progress, targeted for end of month** |
+
+What the hardening layer adds: watchdogs on every phase that waits on an
+external service, a framed link protocol with CRC and a motion deadman,
+fail-closed sensor handling, request correlation, an encrypted and
+authenticated app channel, and a test suite that covers the protocol and the
+safety rules in both languages.
+
+One thing to be explicit about, because the documentation describes it as
+though it were live: **the new MCU firmware is built and tested but not yet
+flashed.** `src/uart/motor_bridge.py` still speaks the legacy ASCII protocol.
+Until both are switched over, the motion lease and fail-closed sensor rules are
+not in effect on the robot. That cutover is part of the hardware validation
+above.
 
 ---
 
@@ -26,7 +57,7 @@ Eight Python services on the Pi, coordinated by a phase-based state machine,
 talking over ZeroMQ PUB/SUB on localhost. One microcontroller on the other end
 of a serial line owning the motors.
 
-Services do not call each other. Everything is a message on a topic, which is
+Services never call each other. Everything is a message on a topic, which is
 what lets a service be restarted, containerised or replaced without touching
 its neighbours.
 
@@ -42,73 +73,39 @@ its neighbours.
 | Motion + sensing | ESP32, own firmware |
 
 Local alternatives exist in the tree — faster-whisper, llama.cpp, Piper — but
-they are **not** what the shipped configuration runs. Set `stt.engine`,
-`llm.engine` and the matching systemd unit if you want them. Note that the
-default configuration therefore needs network access and Azure credentials;
-this is not currently an offline-first system, whatever earlier documentation
-claimed.
+they are not what the shipped configuration runs. The default configuration
+needs network access and Azure credentials.
 
-### The safety model — built and tested, not yet flashed
+### The safety model
 
-Read this section as a migration in progress, because two firmwares exist for
-one MCU and only the older one is live.
+The tier that owns physical safety is the least capable one. The Pi runs Linux,
+Python, a neural network and three cloud SDKs; it is the component most likely
+to hang, crash or get `systemctl stop`ped. So the MCU is the final authority on
+motion and the Pi can only ask.
 
-**Running today** (`src/uart/esp-code.ino` + `src/uart/motor_bridge.py`):
-newline-delimited ASCII, no framing or checksum, and motor state is latched
-GPIO. If the Pi dies or the cable comes loose, the robot keeps driving. The
-MCU does brake autonomously below 10 cm, but only forward is gated and a total
-sensor failure reads as clear road.
-
-**Built, unit-tested, and ready** (`firmware/` + `src/uart/protocol.py` +
-`src/uart/safety.py`): a framed CRC protocol where motion is a **lease, not a
-latch** — the MCU brakes within 300 ms unless the Pi keeps renewing it, so an
-unplugged cable, a crashed orchestrator or `systemctl stop uart` all stop the
-robot without depending on the Pi behaving correctly. Sensors fail **closed**,
-every direction is gated, and rotation and reverse stay available at reduced
-speed so the robot can back out of a corner.
-
-Cutting over needs two things: flash `firmware/port/esp32`, and change
-`motor_bridge.py` to emit frames via `src/uart/protocol.py` instead of ASCII
-tokens. Until both happen, the guarantees above are not in effect on the robot.
+Motion is a **lease, not a latch**: the MCU brakes unless the Pi keeps renewing
+it, so an unplugged cable or a crashed orchestrator stops the robot without
+depending on the Pi behaving correctly. Sensors fail **closed** — three
+simultaneous echo timeouts mean blocked, never clear road.
 
 Wire format and bench checklist: [firmware/PROTOCOL.md](firmware/PROTOCOL.md).
 
 ---
 
-## Documentation
-
-Maintained against the source, and they say so when the code disagrees with the
-intent.
-
-| Document | What it answers |
-|---|---|
-| **[architecture.md](docs/architecture.md)** | How it is built and why. Tiers, IPC rules, the state machine, failure modes, what is not true yet. |
-| **[hardware.md](docs/hardware.md)** | The actual build. Parts, power design, wiring, and corrections to the rest of the repo. |
-| **[services.md](docs/services.md)** | Per-service: what it talks to, how it fails, how to check it. |
-| **[configuration.md](docs/configuration.md)** | Every key in `system.yaml` — including the nineteen that are read by nothing. |
-| **[operations.md](docs/operations.md)** | Running it, diagnosing it, recovering it. |
-| **[firmware/PROTOCOL.md](firmware/PROTOCOL.md)** | The Pi ↔ MCU wire contract, with byte-exact golden vectors. |
-
-Also: [firmware/README.md](firmware/README.md) for bench bring-up and
-[docker/README.md](docker/README.md) for containers.
-
-Older material under `docs/` predates the current build and is not maintained.
-Anything describing hardware, services or config that contradicts the six
-documents above is wrong — several such files have been retired to `dump/`.
-
 ## Layout
 
 ```
-config/      system.yaml — one file, every threshold and engine choice
-src/         the Pi services
-firmware/    MCU firmware; core/ is portable and unit-tested
-deploy/      systemd units, host config, installer
-docker/      dev/CI image and container topology
-docs/        architecture, hardware, per-service reference
-tools/       one-off debugging utilities
-scripts/     build, fetch and setup helpers
-mobile_app/  Android remote
-book/        project thesis (LaTeX)
+config/        system.yaml — one file, every threshold and engine choice
+src/           the Pi services
+firmware/      MCU firmware; core/ is portable and unit-tested
+requirements/  one file per service role, because the deps conflict
+deploy/        systemd units, installer, TLS certificate generation
+docker/        dev/CI image and container topology
+docs/          architecture, hardware, services, configuration, operations
+tools/         debugging utilities
+scripts/       build, fetch and setup helpers
+mobile_app/    Android remote
+book/          project thesis (LaTeX)
 ```
 
 ---
@@ -118,22 +115,17 @@ book/        project thesis (LaTeX)
 The robot runs under systemd. Nine units, one per service:
 
 ```bash
-sudo cp deploy/systemd/*.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now orchestrator voice-pipeline llm tts uart
+cp .env.example .env          # fill it in first — every unit requires it
+sudo ./deploy/install.sh --enable
+sudo systemctl start orchestrator voice-pipeline llm tts uart
 journalctl -fu orchestrator
 ```
 
-Each unit requires `/home/dev/smart_car/.env`. A missing `.env` fails every
-service with no obvious diagnostic, so create it first:
+Start the orchestrator first: it binds the message bus, and PUB/SUB drops
+anything published before a subscriber has attached.
 
-```bash
-cp .env.example .env   # then fill it in
-```
-
-Alternatively, run the software services in containers — see
-[docker/README.md](docker/README.md). The two approaches interoperate, because
-IPC is host-network ZeroMQ either way.
+Four of the nine services also run as containers — see
+[docker/README.md](docker/README.md). The two approaches interoperate.
 
 ---
 
@@ -149,17 +141,19 @@ route on Windows, where there is usually no C compiler for the firmware tests.
 Natively:
 
 ```bash
-pip install -r requirements.txt
-pytest                                       # Python
+pip install -r requirements/base.txt
+pytest
 
-cmake -S firmware -B firmware/build -G Ninja # firmware core
+cmake -S firmware -B firmware/build -G Ninja
 cmake --build firmware/build
 ./firmware/build/sc_tests
 ```
 
-The firmware's protocol and safety logic are tested twice — once in Python
-(`src/uart/`) and once in C (`firmware/core/`) — against shared conformance
-vectors, so the two ends of the serial link cannot silently disagree.
+The link protocol and the motion-safety rules are implemented **twice** — once
+in Python (`src/uart/`) and once in C (`firmware/core/`) — and verified against
+shared conformance vectors including byte-exact golden frames. If the two ends
+of the serial link ever disagree about the wire format, the build fails rather
+than the robot.
 
 ---
 
@@ -177,8 +171,27 @@ Bash it prints `MSys/Mingw is no longer supported` **and exits 0 without
 building anything**, so check that `build/smart_car_mcu.bin` exists rather than
 trusting the exit code.
 
-See [firmware/README.md](firmware/README.md) for wiring, the bench bring-up
-checklist, and notes on the planned STM32/HK32 port.
+See [firmware/README.md](firmware/README.md) for wiring and the bench bring-up
+checklist.
+
+---
+
+## Documentation
+
+Maintained against the source, and they say so where the code disagrees with
+the intent.
+
+| Document | What it answers |
+|---|---|
+| [architecture.md](docs/architecture.md) | How it is built and why. Tiers, IPC rules, state machine, failure modes. |
+| [hardware.md](docs/hardware.md) | The actual build. Parts, power design, wiring. |
+| [services.md](docs/services.md) | Per-service: what it talks to, how it fails, how to check it. |
+| [configuration.md](docs/configuration.md) | Every key in `system.yaml`, including the nineteen read by nothing. |
+| [operations.md](docs/operations.md) | Running it, diagnosing it, recovering it. |
+| [security.md](docs/security.md) | Threat model and the encrypted app channel. |
+
+Older files under `docs/` predate the current build and are not maintained.
+Anything contradicting the six above is wrong.
 
 ---
 
@@ -190,26 +203,7 @@ configuration pulls in components that are not:
 - **Azure Cognitive Services Speech SDK** — proprietary, closed source,
   redistribution restricted. It is the default STT and TTS engine.
 - **YOLO11 weights** — AGPL-3.0. No weights are committed; see
-  [models/vision/README.md](models/vision/README.md) for the obligations before
-  you build anything on them.
+  [models/vision/README.md](models/vision/README.md) before building on them.
 - **Porcupine keyword files** — licensed per Picovoice account and not
   redistributable. Generate your own:
   [models/wakeword/README.md](models/wakeword/README.md).
-
----
-
-## Status
-
-Working: the full voice loop, vision detection, remote control from the Android
-app, and the motion-safety layer.
-
-Known gaps, honestly:
-
-- `system.health` has three subscribers and no publisher, so health-driven
-  behaviour is inert.
-- The audio service does not reopen a microphone that disappears, and its
-  cloud STT call has no timeout.
-- `scripts/run.sh` refers to modules that no longer exist; systemd is the only
-  supported way to start the stack.
-- Vision is `off` by default and must be enabled per session.
-- There is no rear sensor, so reverse is blind and permanently speed-capped.

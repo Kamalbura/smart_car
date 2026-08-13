@@ -27,7 +27,7 @@ try:
     from faster_whisper import WhisperModel
 except Exception as e:
     print("ERROR: faster-whisper is not installed in the STT venv.", file=sys.stderr)
-    print("Please add it to requirements-stte.txt and install.", file=sys.stderr)
+    print("Please add it to requirements/stte.txt and install.", file=sys.stderr)
     sys.exit(2)
 
 print(f"Downloading model '{model_name}' to '{download_root}'...")

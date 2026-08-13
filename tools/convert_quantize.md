@@ -6,7 +6,7 @@
 git clone https://github.com/ultralytics/yolov5.git
 cd yolov5
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements/base.txt
 ```
 
 2) Export to ONNX and TFLite (Ultralytics has `export.py`):

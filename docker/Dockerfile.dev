@@ -26,10 +26,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /workspace
 
 # Copied separately so dependency layers survive source edits.
-COPY requirements.txt requirements-llme.txt ./
+COPY requirements/base.txt requirements/llme.txt ./requirements/
 RUN pip install --no-cache-dir \
-        -r requirements.txt \
-        -r requirements-llme.txt
+        -r requirements/base.txt \
+        -r requirements/llme.txt
 
 # numpy is needed by test_pi_inference.py, which stubs cv2 rather than pulling
 # in all of OpenCV.
