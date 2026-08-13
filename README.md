@@ -77,24 +77,24 @@ Wire format and bench checklist: [firmware/PROTOCOL.md](firmware/PROTOCOL.md).
 
 ## Documentation
 
-Start with these three. They are maintained against the source and say so when
-the code disagrees with the intent.
+Maintained against the source, and they say so when the code disagrees with the
+intent.
 
 | Document | What it answers |
 |---|---|
-| **[docs/architecture.md](docs/architecture.md)** | How it is built and why. Tiers, IPC rules, the state machine, failure modes, what is not true yet. |
-| **[docs/hardware.md](docs/hardware.md)** | The actual build. Parts, power design, wiring, and corrections to everything else in the repo. |
+| **[architecture.md](docs/architecture.md)** | How it is built and why. Tiers, IPC rules, the state machine, failure modes, what is not true yet. |
+| **[hardware.md](docs/hardware.md)** | The actual build. Parts, power design, wiring, and corrections to the rest of the repo. |
+| **[services.md](docs/services.md)** | Per-service: what it talks to, how it fails, how to check it. |
+| **[configuration.md](docs/configuration.md)** | Every key in `system.yaml` — including the nineteen that are read by nothing. |
+| **[operations.md](docs/operations.md)** | Running it, diagnosing it, recovering it. |
 | **[firmware/PROTOCOL.md](firmware/PROTOCOL.md)** | The Pi ↔ MCU wire contract, with byte-exact golden vectors. |
 
-Then, as needed: [firmware/README.md](firmware/README.md) for bench bring-up,
-[docker/README.md](docker/README.md) for containers, and the numbered
-`docs/0*.md` set for per-service reference.
+Also: [firmware/README.md](firmware/README.md) for bench bring-up and
+[docker/README.md](docker/README.md) for containers.
 
-A warning about the older material: `docs/08_embedded_esp32_layer.md` and
-`docs/05_services_reference.md` describe a **different robot** — a pin map that
-contradicts the firmware on every line, an OLED that does not exist, a
-16-LED ring on the wrong GPIO. They predate the current build. Trust
-`docs/hardware.md` and the source.
+Older material under `docs/` predates the current build and is not maintained.
+Anything describing hardware, services or config that contradicts the six
+documents above is wrong — several such files have been retired to `dump/`.
 
 ## Layout
 
