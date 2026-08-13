@@ -46,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
@@ -61,6 +62,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import com.smartcar.supervision.BuildConfig
 import com.smartcar.supervision.data.AppSettings
+import com.smartcar.supervision.data.RobotRepository
 import com.smartcar.supervision.ui.AppStatus
 import com.smartcar.supervision.ui.BackendLogService
 import com.smartcar.supervision.ui.AppViewModel
@@ -1029,6 +1031,9 @@ private fun SettingsScreen(
     var port by rememberSaveable { mutableStateOf(state.settings?.robotPort?.toString() ?: "") }
     var pollMs by rememberSaveable { mutableStateOf(state.settings?.pollIntervalMs?.toString() ?: "1000") }
     var debugEnabled by rememberSaveable { mutableStateOf(state.settings?.debugEnabled ?: false) }
+    var authToken by rememberSaveable { mutableStateOf(state.settings?.authToken ?: "") }
+    var certPin by rememberSaveable { mutableStateOf(state.settings?.certPin ?: "") }
+    var useTls by rememberSaveable { mutableStateOf(state.settings?.useTls ?: true) }
     var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
     var showDiagnostics by rememberSaveable { mutableStateOf(false) }
     var showLimitations by rememberSaveable { mutableStateOf(false) }
@@ -1071,6 +1076,25 @@ private fun SettingsScreen(
                     label = { Text("Poll interval (ms)") },
                     singleLine = true,
                 )
+                OutlinedTextField(
+                    value = authToken,
+                    onValueChange = { authToken = it.trim() },
+                    label = { Text("Auth token") },
+                    supportingText = { Text("REMOTE_AUTH_TOKEN from the robot's .env") },
+                    singleLine = true,
+                )
+                OutlinedTextField(
+                    value = certPin,
+                    onValueChange = { certPin = it.trim() },
+                    label = { Text("Certificate pin") },
+                    supportingText = { Text("sha256/... printed by generate-cert.sh") },
+                    singleLine = true,
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Switch(checked = useTls, onCheckedChange = { useTls = it })
+                    Spacer(Modifier.width(8.dp))
+                    Text(if (useTls) "HTTPS (port 8443)" else "HTTP — unencrypted")
+                }
                 if (errorMessage != null) {
                     Text(errorMessage!!, color = MaterialTheme.colorScheme.error)
                 }
@@ -1091,6 +1115,9 @@ private fun SettingsScreen(
                                 robotPort = parsedPort!!,
                                 pollIntervalMs = parsedPoll!!,
                                 debugEnabled = debugEnabled,
+                                authToken = authToken,
+                                certPin = certPin,
+                                useTls = useTls,
                             )
                         )
                     }
@@ -1159,7 +1186,9 @@ private fun MjpegStreamingView(
     onStop: () -> Unit,
 ) {
     val context = LocalContext.current
-    val client = remember { OkHttpClient.Builder().build() }
+    // Use the configured client: it carries the bearer token and the
+    // certificate pin. Building a bare one here silently bypassed both.
+    val client = RobotRepository.sharedClient
     var latestBitmap by remember { mutableStateOf<Bitmap?>(null) }
     val scope = rememberCoroutineScope()
 

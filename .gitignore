@@ -98,6 +98,14 @@ third_party/llama.cpp
 *.pyd
 .conda
 
+# TLS material. The private key must never leave the device; the certificate is
+# generated per deployment by deploy/tls/generate-cert.sh, so neither belongs in
+# version control. Committing robot.key would let anyone impersonate the robot
+# to your app, which is precisely what the pin is supposed to prevent.
+deploy/tls/*.key
+deploy/tls/*.crt
+deploy/tls/*.pem
+
 # Holding area. Things moved out of the tree but not yet thrown away --
 # superseded modules, docs describing hardware that was never built, captured
 # logs, test media. Never published; delete when you are sure.

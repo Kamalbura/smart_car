@@ -9,6 +9,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import okhttp3.CertificatePinner
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
@@ -36,16 +37,50 @@ class RobotRepository(
         .add(KotlinJsonAdapterFactory())
         .build()
 
-    private val http = OkHttpClient.Builder()
-        .connectTimeout(3, TimeUnit.SECONDS)
-        .readTimeout(5, TimeUnit.SECONDS)
-        .writeTimeout(5, TimeUnit.SECONDS)
-        .build()
+    @Volatile
+    private var authToken: String = ""
+
+    @Volatile
+    private var http: OkHttpClient = buildClient(host = null, pin = "")
 
     @Volatile
     private var api: RobotApi = createApi(BuildConfig.ROBOT_BASE_URL)
 
     private val io = dispatcher
+
+    /**
+     * Build the HTTP client.
+     *
+     * The bearer token is applied by an interceptor on the *client* rather
+     * than per call, so every endpoint is covered by one change and none can
+     * be forgotten. Certificate pinning has to be here too, which is why the
+     * client is rebuilt whenever the host or pin changes: OkHttp fixes the
+     * pinner at build time and pins are per-host.
+     */
+    private fun buildClient(host: String?, pin: String): OkHttpClient {
+        val builder = OkHttpClient.Builder()
+            .connectTimeout(3, TimeUnit.SECONDS)
+            .readTimeout(5, TimeUnit.SECONDS)
+            .writeTimeout(5, TimeUnit.SECONDS)
+            .addInterceptor { chain ->
+                val token = authToken
+                val request = if (token.isBlank()) {
+                    chain.request()
+                } else {
+                    chain.request().newBuilder()
+                        .addHeader("Authorization", "Bearer $token")
+                        .build()
+                }
+                chain.proceed(request)
+            }
+
+        if (!host.isNullOrBlank() && pin.isNotBlank()) {
+            builder.certificatePinner(
+                CertificatePinner.Builder().add(host, pin).build()
+            )
+        }
+        return builder.build()
+    }
 
     private fun createApi(baseUrl: String): RobotApi {
         val safeUrl = if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/"
@@ -57,8 +92,39 @@ class RobotRepository(
             .create(RobotApi::class.java)
     }
 
-    fun updateBaseUrl(baseUrl: String) {
+    /**
+     * Apply connection settings. Replaces updateBaseUrl(), because the token
+     * and pin must be applied at the same moment as the URL — updating one
+     * without the others leaves the app talking to the right host with the
+     * wrong credentials, or to a new host still pinned to the old key.
+     */
+    fun configure(baseUrl: String, token: String, pin: String) {
+        authToken = token
+        val host = runCatching { java.net.URI(baseUrl).host }.getOrNull()
+        http = buildClient(host, pin)
         api = createApi(baseUrl)
+        sharedClient = http
+    }
+
+    @Deprecated("Use configure(), which also applies the token and pin")
+    fun updateBaseUrl(baseUrl: String) {
+        configure(baseUrl, authToken, "")
+    }
+
+    companion object {
+        /**
+         * The configured client, for the MJPEG view.
+         *
+         * MjpegStreamingView cannot use Retrofit — it parses a multipart
+         * stream by hand — and used to construct its own bare OkHttpClient,
+         * which meant it silently bypassed both the auth token and the
+         * certificate pin. Exposing the configured instance is less elegant
+         * than threading it through two composables, and far harder to get
+         * wrong.
+         */
+        @Volatile
+        var sharedClient: OkHttpClient = OkHttpClient.Builder().build()
+            private set
     }
 
     fun snapshotStream(pollMs: Long = 1000L): Flow<Result<SnapshotBundle>> = flow {

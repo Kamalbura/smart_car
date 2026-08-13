@@ -1,6 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android network security policy.
+
+  The previous version listed a single <domain> and nothing else. With no
+  <base-config>, the platform default applied to every other host, and for
+  targetSdk 34 that default is cleartextTrafficPermitted="false". The effect
+  was that changing "Robot IP" in Settings made every request fail with
+  "Cleartext HTTP traffic not permitted" and a generic connection error in the
+  UI — the Settings screen looked functional and silently was not.
+  (android:usesCleartextTraffic in the manifest is ignored whenever this file
+  is present, which is why that did not save it.)
+
+  A <base-config> now applies to all hosts, so any IP entered in Settings
+  works.
+-->
 <network-security-config>
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="false">100.111.13.60</domain>
-    </domain-config>
+
+    <!--
+      Cleartext stays permitted so the app keeps working against a robot that
+      has not yet enabled TLS. Once HTTPS is confirmed end to end, set this to
+      "false" — that is the switch that makes a downgrade impossible rather
+      than merely unlikely.
+    -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+
+            <!--
+              STEP 2, after generating certificates:
+
+                  ./deploy/tls/generate-cert.sh <your-tailscale-ip>
+                  cp deploy/tls/robot.crt \
+                     mobile_app/app/src/main/res/raw/robot.crt
+
+              then uncomment the line below.
+
+              The robot's certificate is self-signed, and OkHttp's
+              CertificatePinner does NOT replace chain validation — it adds to
+              it. Without this anchor the pin never gets a chance to run,
+              because the default trust manager rejects the certificate first.
+
+              Trusting it for all hosts is safe: a certificate only validates
+              for the names inside it, so one issued for CN=smart-car with
+              your robot's IPs in its SANs cannot authenticate anything else.
+            -->
+            <!-- <certificates src="@raw/robot" /> -->
+        </trust-anchors>
+    </base-config>
+
 </network-security-config>

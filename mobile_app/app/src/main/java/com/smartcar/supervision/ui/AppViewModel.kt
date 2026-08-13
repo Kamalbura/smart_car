@@ -49,7 +49,7 @@ class AppViewModel(
             settings = settings,
             debugPanelVisible = settings.debugEnabled,
         )
-        repo.updateBaseUrl(settings.baseUrl())
+        repo.configure(settings.baseUrl(), settings.authToken, settings.certPin)
         startPolling(settings.pollIntervalMs)
         startLogPolling(settings.pollIntervalMs)
         refreshNow()
@@ -63,7 +63,7 @@ class AppViewModel(
             settings = settings,
             debugPanelVisible = settings.debugEnabled,
         )
-        repo.updateBaseUrl(settings.baseUrl())
+        repo.configure(settings.baseUrl(), settings.authToken, settings.certPin)
         startPolling(settings.pollIntervalMs)
         startLogPolling(settings.pollIntervalMs)
         refreshNow()

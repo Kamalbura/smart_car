@@ -97,8 +97,11 @@ services:
     volumes:
       - ../config:/app/config:ro
       - ../logs:/app/logs
-    ports:
-      - "8770:8770"
+    # Deliberately NOT published to the host. The only way in is through the
+    # caddy service, which terminates TLS. Publishing 8770 here would leave a
+    # plaintext door open beside the locked one.
+    expose:
+      - "8770"
     command: python -m src.remote.remote_interface
     depends_on: [orchestrator]
     restart: unless-stopped
@@ -110,6 +113,27 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+  # ---------------------------------------------------------------------
+  # TLS termination. The app's only entry point.
+  #
+  # Everything the app can reach passes through here, so this is where the
+  # channel is encrypted and where an unauthenticated request is cheapest to
+  # drop. remote-interface behind it stays plain HTTP on the internal network
+  # and never learns TLS exists.
+  # ---------------------------------------------------------------------
+  caddy:
+    profiles: [core]
+    image: caddy:2-alpine
+    ports:
+      - "8443:8443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ../deploy/tls:/etc/caddy/certs:ro
+      - caddy-data:/data
+    depends_on: [remote-interface]
+    restart: unless-stopped
+    mem_limit: 128m
 
   # ---------------------------------------------------------------------
   # Hardware-bound. Pi only -- /dev/serial0 does not exist elsewhere.
@@ -160,3 +184,6 @@ services:
 # service both reach the bus, provided the systemd ones get IPC_UPSTREAM /
 # IPC_DOWNSTREAM pointed at the published bridge address.
 # ---------------------------------------------------------------------------
+
+volumes:
+  caddy-data:

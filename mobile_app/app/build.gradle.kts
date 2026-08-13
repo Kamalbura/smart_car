@@ -14,7 +14,7 @@ android {
         versionCode = 1
         versionName = "1.0.0"
 
-            buildConfigField("String", "ROBOT_BASE_URL", "\"http://100.111.13.60:8770/\"")
+            buildConfigField("String", "ROBOT_BASE_URL", "\"https://100.111.13.60:8443/\"")
     }
 
     buildFeatures {
