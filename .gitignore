@@ -106,6 +106,12 @@ deploy/tls/*.key
 deploy/tls/*.crt
 deploy/tls/*.pem
 
+# Personal notes. Prep material, scratch thinking — useful, but not part of the
+# project and not something a public repo should carry.
+INTERVIEW_PREP.md
+NOTES.md
+notes/
+
 # Holding area. Things moved out of the tree but not yet thrown away --
 # superseded modules, docs describing hardware that was never built, captured
 # logs, test media. Never published; delete when you are sure.
