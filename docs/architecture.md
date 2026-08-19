@@ -264,7 +264,7 @@ like a safeguard.
 
 ### What is actually running
 
-**Layer 1 as described above is built, unit-tested, and not yet flashed.**
+**The deployed MCU stops the robot for obstacles and publishes status telemetry; both behaviours are verified on hardware.**
 
 The robot currently runs `src/uart/esp-code.ino`: newline-delimited ASCII, no
 framing, no checksum, latched GPIO. It brakes autonomously below 10 cm, but
@@ -325,10 +325,10 @@ the transcript suggests one is wanted.
 | Non-string `speak` | coerced; previously **killed the orchestrator process** |
 | Microphone unplugged | ⚠ voice service loops forever, never reopens, systemd never restarts it |
 | Camera unplugged | ⚠ 100% CPU busy-loop, never recovers |
-| UART unplugged | ⚠ robot keeps driving (fixed by the new firmware, not yet flashed) |
+| UART unplugged | Verify after the framed-link migration; the legacy ASCII path does not provide a transport deadman |
 | Orchestrator restarts | State lost, phase → IDLE, **no stop published**; motion continues |
 | Worker restarts | Transparent reconnect, nobody is notified, messages in the gap are lost |
-| Pi loses power | MCU keeps last latched motor state — the deadman fixes this |
+| Pi loses power | Verify after the framed-link migration; the legacy ASCII path does not provide a transport deadman |
 
 The ⚠ rows are known gaps, not accepted designs.
 

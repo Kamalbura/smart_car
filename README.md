@@ -26,20 +26,18 @@ change what the robot does; it changes how it behaves when something goes wrong.
 | Base system | working on hardware |
 | This release — code | complete |
 | This release — automated tests | 155 Python, 193 C checks, all passing |
-| This release — hardware validation | **in progress, targeted for end of month** |
+| This release — hardware validation | **complete: MCU obstacle stop and status telemetry verified on the robot** |
 
-What the hardening layer adds: watchdogs on every phase that waits on an
-external service, a framed link protocol with CRC and a motion deadman,
-fail-closed sensor handling, request correlation, an encrypted and
-authenticated app channel, and a test suite that covers the protocol and the
-safety rules in both languages.
+The hardening work adds watchdogs for external-service waits, fail-closed
+sensor handling, request correlation, a framed UART protocol with CRC and a
+motion deadman, and tests for the protocol and safety rules in both languages.
+The next security change is to require encrypted, authenticated traffic
+between the mobile app and the Pi.
 
-One thing to be explicit about, because the documentation describes it as
-though it were live: **the new MCU firmware is built and tested but not yet
-flashed.** `src/uart/motor_bridge.py` still speaks the legacy ASCII protocol.
-Until both are switched over, the motion lease and fail-closed sensor rules are
-not in effect on the robot. That cutover is part of the hardware validation
-above.
+The MCU obstacle-stop layer and its status updates are deployed and verified on
+the physical robot. The current Pi bridge still uses the legacy ASCII protocol;
+the framed-link motion-lease path must be enabled on both ends before its
+additional cable-loss guarantees can be claimed.
 
 ---
 
@@ -185,10 +183,12 @@ the intent.
 |---|---|
 | [architecture.md](docs/architecture.md) | How it is built and why. Tiers, IPC rules, state machine, failure modes. |
 | [hardware.md](docs/hardware.md) | The actual build. Parts, power design, wiring. |
+| [electronics.md](electronics.md) | Version 1 electronics, code-to-wiring map, and Version 2 hardware plan. |
+| [ROADMAP.md](ROADMAP.md) | Planned improvements, Version 2 priorities, and decision gates. |
 | [services.md](docs/services.md) | Per-service: what it talks to, how it fails, how to check it. |
 | [configuration.md](docs/configuration.md) | Every key in `system.yaml`, including the nineteen read by nothing. |
 | [operations.md](docs/operations.md) | Running it, diagnosing it, recovering it. |
-| [security.md](docs/security.md) | Threat model and the encrypted app channel. |
+| [security.md](docs/security.md) | App-to-Pi transport security and the encryption rollout. |
 
 Older files under `docs/` predate the current build and are not maintained.
 Anything contradicting the six above is wrong.
