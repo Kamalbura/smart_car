@@ -210,6 +210,10 @@ Contributions are welcome through forks and pull requests. See
 attribution expectations. Contributions intentionally submitted for inclusion
 are licensed under Apache-2.0; no copyright assignment is required.
 
+### Contributors
+
+- [Himasree Bura](https://github.com/burahimasree)
+
 The Apache licence covers the Smart Car core only. It does not license or claim
 ownership of third-party dependencies, cloud services, SDKs, models, firmware,
 or assets obtained separately. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
