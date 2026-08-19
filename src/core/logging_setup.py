@@ -66,3 +66,5 @@ def get_logger(name: str, log_dir: Optional[Path], *, level: int = logging.INFO)
 
     logger.propagate = False
     return logger
+ # Copyright 2026 Kamal Bura
+ # SPDX-License-Identifier: Apache-2.0

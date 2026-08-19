@@ -8,7 +8,8 @@
  * and memmove, so it compiles unchanged for the host test build, ESP-IDF and
  * STM32. No dynamic allocation anywhere.
  *
- * Copyright 2025-2026 Bura Kamal. SPDX-License-Identifier: Apache-2.0
+* Copyright 2026 Kamal Bura
+* SPDX-License-Identifier: Apache-2.0
  */
 #ifndef SC_PROTOCOL_H
 #define SC_PROTOCOL_H

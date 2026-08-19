@@ -135,6 +135,7 @@ img*.jpg
 face_preview.png
 
 # LaTeX build artifacts (the thesis PDF is a build output, not a source)
+book/
 book/*.pdf
 *.aux
 *.fls

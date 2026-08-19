@@ -1,7 +1,8 @@
 /*
  * Smart Car motion-safety state machine -- portable core.
  * Transliteration of src/uart/safety.py. Keep the two in step.
- * Copyright 2025-2026 Bura Kamal. SPDX-License-Identifier: Apache-2.0
+ * Copyright 2026 Kamal Bura
+ * SPDX-License-Identifier: Apache-2.0
  */
 #include "sc_safety.h"
 

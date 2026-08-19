@@ -115,3 +115,5 @@ def make_subscriber(
 def publish_json(sock: zmq.Socket, topic: bytes, payload: Dict[str, Any]) -> None:
     """Publish a JSON payload on a topic."""
     sock.send_multipart([topic, json.dumps(payload).encode("utf-8")])
+ # Copyright 2026 Kamal Bura
+ # SPDX-License-Identifier: Apache-2.0

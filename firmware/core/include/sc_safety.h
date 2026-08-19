@@ -14,7 +14,8 @@
  * advisory only, because they are worthless in exactly the case that matters:
  * when the Pi is the component that failed.
  *
- * Copyright 2025-2026 Bura Kamal. SPDX-License-Identifier: Apache-2.0
+* Copyright 2026 Kamal Bura
+* SPDX-License-Identifier: Apache-2.0
  */
 #ifndef SC_SAFETY_H
 #define SC_SAFETY_H

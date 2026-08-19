@@ -1,6 +1,7 @@
 /*
  * Motor and servo drivers (LEDC PWM).
- * Copyright 2025-2026 Bura Kamal. SPDX-License-Identifier: Apache-2.0
+ * Copyright 2026 Kamal Bura
+ * SPDX-License-Identifier: Apache-2.0
  */
 #include "drv_actuators.h"
 

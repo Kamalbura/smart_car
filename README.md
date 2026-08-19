@@ -195,7 +195,32 @@ Anything contradicting the six above is wrong.
 
 ---
 
-## Third-party licensing
+## Licence, attribution, and contributions
+
+Smart Car’s original source and documentation are licensed under the
+[Apache License 2.0](LICENSE). The original project copyright is
+**Copyright 2026 Kamal Bura**, recorded in [NOTICE](NOTICE). Apache-2.0 lets
+you inspect, use, modify, distribute, fork, and contribute to the project,
+including for commercial purposes, subject to its notice, attribution, patent,
+and redistribution terms. It does not transfer ownership of contributors’ work
+to the original author.
+
+Contributions are welcome through forks and pull requests. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for contribution, testing, safety, and
+attribution expectations. Contributions intentionally submitted for inclusion
+are licensed under Apache-2.0; no copyright assignment is required.
+
+The Apache licence covers the Smart Car core only. It does not license or claim
+ownership of third-party dependencies, cloud services, SDKs, models, firmware,
+or assets obtained separately. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+before redistributing a build or developing a commercial product.
+
+Future proprietary hosted services, commercial tooling, hardware designs, or
+separately licensed models can be developed independently from the open-source
+Apache-2.0 core when the components are genuinely separable and their own terms
+are met.
+
+### Known separately licensed runtime components
 
 This project is Apache-2.0 (see [LICENSE](LICENSE)), but the default runtime
 configuration pulls in components that are not:

@@ -182,3 +182,5 @@ class WorldContextAggregator:
         if age_ms is None:
             return None
         return age_ms > threshold_ms
+ # Copyright 2026 Kamal Bura
+ # SPDX-License-Identifier: Apache-2.0

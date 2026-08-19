@@ -1,6 +1,7 @@
 /*
  * Smart Car link protocol, v1 -- portable core.
- * Copyright 2025-2026 Bura Kamal. SPDX-License-Identifier: Apache-2.0
+ * Copyright 2026 Kamal Bura
+ * SPDX-License-Identifier: Apache-2.0
  */
 #include "sc_protocol.h"
 

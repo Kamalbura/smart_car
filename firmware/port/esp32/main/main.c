@@ -10,7 +10,8 @@
  * on the host by firmware/test and mirrored by src/uart/safety.py. This file
  * is only plumbing: it moves bytes and drives pins.
  *
- * Copyright 2025-2026 Bura Kamal. SPDX-License-Identifier: Apache-2.0
+* Copyright 2026 Kamal Bura
+* SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
 

@@ -86,3 +86,5 @@ def _balanced_objects(text: str) -> Iterator[str]:
                 if depth == 0 and start >= 0:
                     yield text[start : index + 1]
                     start = -1
+ # Copyright 2026 Kamal Bura
+ # SPDX-License-Identifier: Apache-2.0

@@ -186,3 +186,5 @@ class ConfigLoader:
         )
         display_cfg = raw.get("display", {})
         return CoreConfig(stt=stt_cfg, tts=tts_cfg, llm=llm_cfg, vision=vision_cfg, display=display_cfg)
+ # Copyright 2026 Kamal Bura
+ # SPDX-License-Identifier: Apache-2.0

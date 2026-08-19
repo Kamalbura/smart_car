@@ -6,7 +6,8 @@
  * everything above the pins: real PWM instead of latched GPIO, non-blocking
  * echo timing instead of pulseIn(), and a framed protocol with a deadman.
  *
- * Copyright 2025-2026 Bura Kamal. SPDX-License-Identifier: Apache-2.0
+* Copyright 2026 Kamal Bura
+* SPDX-License-Identifier: Apache-2.0
  */
 #ifndef BOARD_H
 #define BOARD_H

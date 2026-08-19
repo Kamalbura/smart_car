@@ -10,7 +10,8 @@
  * another's ping. Firing them back-to-back is the usual source of phantom
  * short readings on a three-sensor array.
  *
- * Copyright 2025-2026 Bura Kamal. SPDX-License-Identifier: Apache-2.0
+* Copyright 2026 Kamal Bura
+* SPDX-License-Identifier: Apache-2.0
  */
 #ifndef DRV_SONAR_H
 #define DRV_SONAR_H
